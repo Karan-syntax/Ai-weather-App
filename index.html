@@ -735,18 +735,27 @@
  const fetchGeminiResponse = async (userQuery) => {
     try {
         const weatherContext = currentWeatherData
-            ? `Current Location: ${currentCityName}. Temp: ${currentTempString}. Description: ${currentWeatherDesc}. Humidity: ${currentWeatherData.main.humidity}%. Wind Speed: ${currentWeatherData.wind.speed} m/s.`
-            : "No current weather data available.";
+            ? `Current Location: ${currentCityName}.
+Temperature: ${currentTempString}.
+Weather: ${currentWeatherDesc}.
+Humidity: ${currentWeatherData.main.humidity}%.
+Wind Speed: ${currentWeatherData.wind.speed} m/s.`
+            : '';
 
-        const prompt = `You are SkyFlow AI, a professional weather assistant.
+        const prompt = `
+You are SkyFlow AI, a professional weather assistant.
 
-Current weather:
 ${weatherContext}
 
 User question:
 ${userQuery}
 
-Give a helpful, concise answer in 2-3 sentences. If the question is about food, clothing, activities, or going outside, use the current weather context when relevant.`;
+Give a helpful, natural answer based on the weather context.
+
+Keep the answer concise: 2-4 sentences.
+Do not use markdown headings.
+Do not use unnecessary bullet points.
+`;
 
         const response = await fetch('/api/chat', {
             method: 'POST',
@@ -754,7 +763,7 @@ Give a helpful, concise answer in 2-3 sentences. If the question is about food, 
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                prompt: prompt
+                prompt
             })
         });
 
@@ -762,19 +771,20 @@ Give a helpful, concise answer in 2-3 sentences. If the question is about food, 
 
         if (!response.ok) {
             throw new Error(
-                data?.error || `Chat request failed (${response.status})`
+                data?.error || `AI request failed (${response.status})`
             );
         }
 
-        if (!data?.text) {
-            throw new Error('The AI returned an empty response.');
+        if (!data.text) {
+            throw new Error('AI returned an empty response.');
         }
 
         return formatResponse(data.text);
 
     } catch (err) {
         console.error('Chat API call failed:', err);
-        return `Chat Error: ${err?.message || 'Unable to contact the AI assistant.'}`;
+
+        return `Sorry, the AI service is temporarily unavailable. Please try again in a moment.`;
     }
 };
         sendMessage.addEventListener('click', async () => {

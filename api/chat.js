@@ -7,12 +7,12 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-        return res.status(500).json({ error: 'Missing GEMINI_API_KEY environment variable.' });
+        return res.status(500).json({ error: 'Missing GEMINI_API_KEY in server environment variables.' });
     }
 
     try {
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -22,16 +22,16 @@ export default async function handler(req, res) {
             }
         );
 
+        const data = await response.json();
+
         if (!response.ok) {
-            const errData = await response.json();
-            return res.status(response.status).json({ error: errData });
+            return res.status(response.status).json({ error: data.error?.message || 'Gemini API call failed' });
         }
 
-        const data = await response.json();
-        const rawText = data.candidates[0].content.parts[0].text;
+        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response received.";
         return res.status(200).json({ text: rawText });
 
     } catch (err) {
-        return res.status(500).json({ error: err.message || 'Failed to call AI service' });
+        return res.status(500).json({ error: err.message || 'Internal server error' });
     }
 }

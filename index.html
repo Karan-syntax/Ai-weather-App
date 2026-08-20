@@ -733,7 +733,7 @@
             return cleanText;
         };
 
-        const fetchGeminiResponse = async (userQuery) => {
+      const fetchGeminiResponse = async (userQuery) => {
     try {
         const weatherContext = currentWeatherData 
             ? `Current Location: ${currentCityName}. Temp: ${currentTempString}. Description: ${currentWeatherDesc}. Humidity: ${currentWeatherData.main.humidity}%. Wind Speed: ${currentWeatherData.wind.speed} m/s.`
@@ -743,17 +743,23 @@
 
         const response = await fetch('/api/chat', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ prompt })
         });
 
-        if (!response.ok) throw new Error("AI endpoint returned an error.");
-
         const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Server returned an error.");
+        }
+
         return formatResponse(data.text);
+
     } catch (err) {
-        console.error("Gemini route failed: ", err);
-        return "I couldn't contact my intelligence core right now, but feel free to check the dashboard stats or try again! 🌟";
+        console.error("Gemini API call failed: ", err);
+        return `Chat Error: ${err.message}`;
     }
 };
 

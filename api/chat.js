@@ -3,21 +3,41 @@ module.exports = async (req, res) => {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { prompt } = req.body;
+    const { prompt } = req.body || {};
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-        return res.status(500).json({ error: 'Missing GEMINI_API_KEY in Vercel settings.' });
+        return res.status(500).json({
+            error: 'Missing GEMINI_API_KEY in Vercel environment variables.'
+        });
+    }
+
+    if (!prompt || typeof prompt !== 'string') {
+        return res.status(400).json({
+            error: 'A valid prompt is required.'
+        });
     }
 
     try {
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent',
             {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': apiKey
+                },
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }]
+                    contents: [
+                        {
+                            role: 'user',
+                            parts: [
+                                {
+                                    text: prompt
+                                }
+                            ]
+                        }
+                    ]
                 })
             }
         );
@@ -25,13 +45,32 @@ module.exports = async (req, res) => {
         const data = await response.json();
 
         if (!response.ok) {
-            return res.status(response.status).json({ error: data.error?.message || 'Gemini request failed' });
+            console.error('Gemini API error:', data);
+
+            return res.status(response.status).json({
+                error:
+                    data?.error?.message ||
+                    data?.error?.status ||
+                    'Gemini API request failed.'
+            });
         }
 
-        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
-        return res.status(200).json({ text: rawText });
+        const rawText =
+            data?.candidates?.[0]?.content?.parts
+                ?.map(part => part.text || '')
+                .join(' ')
+                .trim() ||
+            'No response generated.';
+
+        return res.status(200).json({
+            text: rawText
+        });
 
     } catch (err) {
-        return res.status(500).json({ error: err.message || 'Server error' });
+        console.error('Server error:', err);
+
+        return res.status(500).json({
+            error: err?.message || 'Internal server error.'
+        });
     }
 };

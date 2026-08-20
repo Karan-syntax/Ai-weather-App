@@ -1,0 +1,35 @@
+# API Keys and Environment Variables
+.env
+.env.local
+.env.*.local
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Node modules (if used in future)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+desktop.ini
+
+# Logs
+logs/
+*.log
+
+# Build and dist files (if used in future)
+dist/
+build/

@@ -733,7 +733,7 @@
             return cleanText;
         };
 
-  const fetchGeminiResponse = async (userQuery) => {
+ const fetchGeminiResponse = async (userQuery) => {
     try {
         const weatherContext = currentWeatherData 
             ? `Current Location: ${currentCityName}. Temp: ${currentTempString}. Description: ${currentWeatherDesc}. Humidity: ${currentWeatherData.main.humidity}%. Wind Speed: ${currentWeatherData.wind.speed} m/s.`
@@ -760,7 +760,6 @@
         return `Chat Error: ${err.message}`;
     }
 };
-
         sendMessage.addEventListener('click', async () => {
             const text = chatInput.value.trim();
             if (!text) return;

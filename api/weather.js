@@ -1,33 +1,42 @@
-export default async function handler(request, response) {
-    const { city, type, prompt } = request.query;
+export default async function handler(req, res) {
+    const { lat, lon, city } = req.query;
+    const apiKey = process.env.OPENWEATHER_API_KEY; // Stored securely in environment variables
 
-    const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+        return res.status(500).json({ error: "Server missing API key setup." });
+    }
 
     try {
-        if (type === 'chat') {
-            const geminiRes = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                }
-            );
-            const data = await geminiRes.json();
-            return response.status(200).json(data);
+        let weatherUrl = "";
+        let forecastUrl = "";
+
+        if (lat && lon) {
+            weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
+            forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
+        } else if (city) {
+            weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=metric&appid=${apiKey}`;
+            forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&units=metric&appid=${apiKey}`;
+        } else {
+            return res.status(400).json({ error: "Missing location parameters." });
         }
 
-        const targetCity = (city && city !== 'undefined' && city.trim() !== '') ? city : 'New York';
-        
-        const weatherRes = await fetch(
-            `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(targetCity)}&units=metric&appid=${WEATHER_API_KEY}`
-        );
+        const [weatherRes, forecastRes] = await Promise.all([
+            fetch(weatherUrl),
+            fetch(forecastUrl)
+        ]);
 
-        const data = await weatherRes.json();
-        return response.status(200).json(data);
+        if (!weatherRes.ok || !forecastRes.ok) {
+            return res.status(404).json({ error: "Location not found or API error." });
+        }
 
+        const weatherData = await weatherRes.json();
+        const forecastData = await forecastRes.json();
+
+        return res.status(200).json({
+            weather: weatherData,
+            forecast: forecastData
+        });
     } catch (error) {
-        return response.status(500).json({ error: 'Server error' });
+        return res.status(500).json({ error: "Internal server error." });
     }
 }

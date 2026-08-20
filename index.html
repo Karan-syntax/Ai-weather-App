@@ -407,8 +407,7 @@
 
     <!-- JS Logic -->
     <script>
-        const WEATHER_API_KEY = ''; 
-        const GEMINI_API_KEY = '';
+       const GEMINI_API_KEY = 'your_gemini_key_here';
 
         const searchForm = document.getElementById('search-form');
         const searchInput = document.getElementById('search-input');
@@ -547,47 +546,41 @@
         };
 
         // Main Weather Data Fetch
-        const fetchWeatherDetails = async (latitude, longitude, cityName = '') => {
-            try {
-                loadingDiv.classList.remove('hidden');
-                weatherDashboard.classList.add('hidden');
-                errorDiv.classList.add('hidden');
+       const fetchWeatherDetails = async (latitude, longitude, cityName = '') => {
+    try {
+        loadingDiv.classList.remove('hidden');
+        weatherDashboard.classList.add('hidden');
+        errorDiv.classList.add('hidden');
 
-                let weatherUrl = '';
-                let forecastUrl = '';
+        // Build endpoint URL for your serverless backend
+        let endpoint = '/api/weather?';
+        if (cityName) {
+            endpoint += `city=${encodeURIComponent(cityName)}`;
+        } else if (latitude && longitude) {
+            endpoint += `lat=${latitude}&lon=${longitude}`;
+        } else {
+            throw new Error("No location provided.");
+        }
 
-                if (cityName) {
-                    weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(cityName)}&units=metric&appid=${WEATHER_API_KEY}`;
-                    forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(cityName)}&units=metric&appid=${WEATHER_API_KEY}`;
-                } else {
-                    weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${WEATHER_API_KEY}`;
-                    forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&units=metric&appid=${WEATHER_API_KEY}`;
-                }
+        // Fetch combined weather + forecast data from your backend
+        const response = await fetch(endpoint);
+        if (!response.ok) throw new Error("City or location not found.");
 
-                const [weatherRes, forecastRes] = await Promise.all([
-                    fetch(weatherUrl),
-                    fetch(forecastUrl)
-                ]);
+        const { weather: weatherData, forecast: forecastData } = await response.json();
 
-                if (!weatherRes.ok) throw new Error("City or location not found.");
-                if (!forecastRes.ok) throw new Error("Forecast data unavailable.");
+        currentWeatherData = weatherData;
+        displayCurrentWeather(weatherData);
+        displayForecast(forecastData);
 
-                const weatherData = await weatherRes.json();
-                const forecastData = await forecastRes.json();
+        loadingDiv.classList.add('hidden');
+        weatherDashboard.classList.remove('hidden');
 
-                currentWeatherData = weatherData;
-                displayCurrentWeather(weatherData);
-                displayForecast(forecastData);
-
-                loadingDiv.classList.add('hidden');
-                weatherDashboard.classList.remove('hidden');
-
-            } catch (err) {
-                loadingDiv.classList.add('hidden');
-                errorDiv.classList.remove('hidden');
-                errorDiv.textContent = err.message || "An unexpected error occurred.";
-            }
-        };
+    } catch (err) {
+        loadingDiv.classList.add('hidden');
+        errorDiv.classList.remove('hidden');
+        errorDiv.textContent = err.message || "An unexpected error occurred.";
+    }
+};
 
         const displayCurrentWeather = (data) => {
             currentCityName = data.name;

@@ -1,9 +1,9 @@
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
     const { lat, lon, city } = req.query;
     const apiKey = process.env.OPENWEATHER_API_KEY;
 
     if (!apiKey) {
-        return res.status(500).json({ error: "Missing API Key in Vercel environment variables." });
+        return res.status(500).json({ error: "Missing API key in environment variables." });
     }
 
     try {
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
         ]);
 
         if (!weatherRes.ok || !forecastRes.ok) {
-            return res.status(404).json({ error: "Location not found or invalid API key." });
+            return res.status(404).json({ error: "Location not found." });
         }
 
         const weatherData = await weatherRes.json();
@@ -37,6 +37,6 @@ export default async function handler(req, res) {
             forecast: forecastData
         });
     } catch (error) {
-        return res.status(500).json({ error: error.message || "Server error" });
+        return res.status(500).json({ error: "Internal server error" });
     }
-}
+};
